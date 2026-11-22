@@ -88,7 +88,7 @@
 }
 
 /* ----------------------------------------------------------------
-   Remote cursor and selection styles for y-monaco
+   Remote cursor, selection, and name tag styles for y-monaco
    ---------------------------------------------------------------- */
 .yRemoteSelection {
   background-color: rgba(99, 102, 241, 0.25);
@@ -108,4 +108,23 @@
   border-radius: 4px;
   left: -4px;
   top: -4px;
+}
+
+/* User name badge floating above remote cursor */
+.yRemoteSelectionHead > div {
+  position: absolute;
+  top: -1.3em;
+  left: -2px;
+  font-size: 10px;
+  font-family: inherit;
+  font-weight: 600;
+  line-height: normal;
+  user-select: none;
+  color: white;
+  padding: 1px 4px;
+  border-radius: 3px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 10;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }

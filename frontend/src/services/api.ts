@@ -79,8 +79,14 @@ export const authApi = {
     return res.data
   },
 
-  /** Redirect to GitHub OAuth — just a link, not an API call */
-  githubLoginUrl: () => '/auth/github',
+  /** Redirect to GitHub OAuth — points directly to backend endpoint */
+  githubLoginUrl: () => `${API_BASE_URL || ''}/auth/github`,
+
+  /** Exchange short-lived OAuth code for JWT token */
+  oauthExchange: async (code: string) => {
+    const res = await api.post('/auth/oauth-exchange', { code })
+    return res.data as { token: string }
+  },
 }
 
 // -------------------------------------------------------

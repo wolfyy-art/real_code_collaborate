@@ -2,18 +2,18 @@ import { useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Code2 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
+import { authApi } from '@/services/api'
+import toast from 'react-hot-toast'
 
 /**
  * AuthCallback — handles the redirect back from GitHub OAuth.
  *
  * Flow:
- * 1. GitHub redirects to our backend: GET /auth/github/callback
- * 2. Backend validates the code, creates/updates the user, sets a cookie
- * 3. Backend redirects the browser to: /auth/callback?status=success
- * 4. THIS page reads the status and navigates appropriately
- *
- * If status=error, show the error. Otherwise refresh the user session
- * and redirect to the dashboard.
+ * 1. GitHub redirects to backend: GET /auth/github/callback
+ * 2. Backend validates the code, creates/updates the user, sets cookie
+ * 3. Backend redirects browser to: /auth/callback?status=success&code=oex_...
+ * 4. THIS page exchanges the one-time code for the token, stores it in localStorage,
+ *    refreshes the user state, and navigates to the dashboard.
  */
 export default function AuthCallback() {
   const [params] = useSearchParams()
@@ -23,21 +23,40 @@ export default function AuthCallback() {
 
   const status = params.get('status')
   const error  = params.get('error')
+  const code   = params.get('code')
 
   useEffect(() => {
     if (called.current) return
     called.current = true
 
     if (status === 'success') {
-      // Refresh auth context then go to dashboard
-      refreshUser().then(() => {
-        navigate('/dashboard', { replace: true })
-      })
+      const finishAuth = async () => {
+        try {
+          if (code) {
+            // Exchange single-use temporary code for JWT token
+            const exchangeRes = await authApi.oauthExchange(code)
+            if (exchangeRes.token) {
+              localStorage.setItem('auth_token', exchangeRes.token)
+            }
+          }
+          await refreshUser()
+          toast.success('Logged in successfully via GitHub!')
+          navigate('/dashboard', { replace: true })
+        } catch (err) {
+          console.error('[AuthCallback] Token exchange error:', err)
+          toast.error('Failed to complete GitHub authentication.')
+          setTimeout(() => navigate('/login', { replace: true }), 2500)
+        }
+      }
+
+      finishAuth()
     } else {
       // OAuth failed — go back to login with an error after 3 seconds
+      const msg = error ? `GitHub sign-in error: ${error}` : 'GitHub authentication failed'
+      toast.error(msg)
       setTimeout(() => navigate('/login', { replace: true }), 3000)
     }
-  }, [status, refreshUser, navigate])
+  }, [status, error, code, refreshUser, navigate])
 
   return (
     <div className="min-h-screen bg-editor-bg flex items-center justify-center">

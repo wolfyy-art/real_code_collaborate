@@ -235,7 +235,14 @@ export async function githubCallback(req: Request, res: Response): Promise<void>
     const jwt = generateToken(user.id)
     setAuthCookie(res, jwt)
 
-    res.redirect(`${env.FRONTEND_URL}/auth/callback?status=success`)
+    // Generate a secure, short-lived (60s) single-use exchange code to prevent leaking JWT in URL
+    const exchangeCode = `oex_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`
+    oauthExchangeCodes.set(exchangeCode, {
+      token: jwt,
+      expiresAt: Date.now() + 60000,
+    })
+
+    res.redirect(`${env.FRONTEND_URL}/auth/callback?status=success&code=${exchangeCode}`)
   } catch (err) {
     console.error('[Auth] GitHub callback error:', err)
     res.redirect(`${env.FRONTEND_URL}/auth/callback?status=error&error=server_error`)
@@ -253,7 +260,44 @@ export function logout(req: Request, res: Response): void {
   res.json({ message: 'Logged out successfully' })
 }
 
-// ── GitHub API response types ──────────────────────────
+// In-memory single-use exchange codes for OAuth token handoff (expires in 60s)
+const oauthExchangeCodes = new Map<string, { token: string; expiresAt: number }>()
+
+// Periodically clean expired codes
+setInterval(() => {
+  const now = Date.now()
+  for (const [code, entry] of oauthExchangeCodes.entries()) {
+    if (entry.expiresAt <= now) {
+      oauthExchangeCodes.delete(code)
+    }
+  }
+}, 30000)
+
+/**
+ * POST /auth/oauth-exchange
+ * Exchanges a single-use exchange code for the actual JWT token.
+ * Prevents exposing long-lived JWTs in URL query params or browser history.
+ */
+export function oauthExchange(req: Request, res: Response): void {
+  const { code } = req.body as { code?: string }
+  if (!code) {
+    res.status(400).json({ error: 'Exchange code is required' })
+    return
+  }
+
+  const entry = oauthExchangeCodes.get(code)
+  if (!entry || entry.expiresAt <= Date.now()) {
+    oauthExchangeCodes.delete(code)
+    res.status(400).json({ error: 'Invalid or expired exchange code' })
+    return
+  }
+
+  // Single-use: immediately delete upon redemption
+  oauthExchangeCodes.delete(code)
+
+  setAuthCookie(res, entry.token)
+  res.json({ token: entry.token })
+}
 interface GithubProfile {
   id:         number
   login:      string

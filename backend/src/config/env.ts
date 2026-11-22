@@ -60,7 +60,12 @@ export const env = {
   // GitHub OAuth
   GITHUB_CLIENT_ID:     optional('GITHUB_CLIENT_ID', ''),
   GITHUB_CLIENT_SECRET: optional('GITHUB_CLIENT_SECRET', ''),
-  GITHUB_CALLBACK_URL:  optional('GITHUB_CALLBACK_URL', 'http://localhost:4000/auth/github/callback'),
+  GITHUB_CALLBACK_URL:  optional(
+    'GITHUB_CALLBACK_URL',
+    optional('IS_PROD') || process.env.NODE_ENV === 'production'
+      ? 'https://codecollab-api-2xar.onrender.com/auth/github/callback'
+      : 'http://localhost:4000/auth/github/callback'
+  ),
 
   // Judge0
   JUDGE0_API_URL:  optional('JUDGE0_API_URL', 'https://ce.judge0.com'),

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { Code2, Shield, Zap, Users, LogIn, UserPlus, Sparkles } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
+import { authApi } from '@/services/api'
 import { Spinner } from '@/components/Spinner'
 import toast from 'react-hot-toast'
 
@@ -253,7 +254,7 @@ export default function LoginPage() {
 
           {/* GitHub OAuth button */}
           <a
-            href="/auth/github"
+            href={authApi.githubLoginUrl()}
             className="flex items-center justify-center gap-3 w-full px-4 py-2.5
                        bg-[#24292f] hover:bg-[#2f3439] border border-[#444c56]
                        rounded-lg text-white text-sm font-medium transition-colors"

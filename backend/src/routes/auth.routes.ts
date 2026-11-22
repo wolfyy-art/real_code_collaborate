@@ -7,6 +7,7 @@ import {
   githubCallback,
   getMe,
   logout,
+  oauthExchange,
   registerSchema,
   loginSchema,
 } from '../controllers/auth.controller'
@@ -43,6 +44,9 @@ router.get('/github', asyncHandler(githubLogin))
 
 // GitHub sends the user back here after they approve
 router.get('/github/callback', asyncHandler(githubCallback))
+
+// Exchange temporary OAuth code for JWT token
+router.post('/oauth-exchange', asyncHandler(oauthExchange))
 
 // Get the currently logged-in user
 router.get('/me', authenticate, asyncHandler(getMe))
