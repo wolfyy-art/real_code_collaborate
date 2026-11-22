@@ -2,6 +2,7 @@ import clsx from 'clsx'
 
 export type Language = 'python' | 'javascript' | 'java'
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const LANGUAGES: { value: Language; label: string; icon: string; color: string }[] = [
   { value: 'python',     label: 'Python',     icon: '🐍', color: 'text-yellow-400' },
   { value: 'javascript', label: 'JavaScript', icon: '⚡', color: 'text-yellow-300' },

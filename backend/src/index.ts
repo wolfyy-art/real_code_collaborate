@@ -133,6 +133,7 @@ async function bootstrap(): Promise<void> {
   registerSocketHandlers(io)
 
   // ── Periodic auto-save: persist in-memory Y.Doc code to PostgreSQL ──
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const autoSaveInterval = setInterval(async () => {
     const roomIds = getActiveRoomIds()
     for (const roomId of roomIds) {

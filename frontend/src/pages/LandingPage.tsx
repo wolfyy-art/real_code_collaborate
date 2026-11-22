@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
+import { authApi } from '@/services/api'
 import {
   Code2, Users, Zap, GitBranch, Terminal, History,
-  ChevronRight, CheckCircle2, Globe, Lock, Cpu
+  ChevronRight, Globe, Lock, Cpu
 } from 'lucide-react'
 
 export default function LandingPage() {
@@ -28,7 +29,7 @@ export default function LandingPage() {
             ) : (
               <>
                 <Link to="/login" className="btn-secondary hidden sm:inline-flex">Sign In</Link>
-                <a href="/auth/github" className="btn-primary gap-1.5">
+                <a href={authApi.githubLoginUrl()} className="btn-primary gap-1.5">
                   Get Started <ChevronRight className="h-4 w-4" />
                 </a>
               </>
@@ -190,7 +191,7 @@ export default function LandingPage() {
           <p className="text-gray-400 mb-8">
             Create a room, share the link, and start coding together instantly.
           </p>
-          <a href="/auth/github" className="btn-primary text-base px-8 py-3 gap-2 shadow-lg shadow-brand/20 mx-auto">
+          <a href={authApi.githubLoginUrl()} className="btn-primary text-base px-8 py-3 gap-2 shadow-lg shadow-brand/20 mx-auto">
             <GitBranch className="h-5 w-5" />
             Start with GitHub
           </a>

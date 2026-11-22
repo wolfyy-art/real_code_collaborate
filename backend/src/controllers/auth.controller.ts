@@ -116,22 +116,26 @@ export async function login(req: Request, res: Response): Promise<void> {
 
 // ── Demo / Guest Login (for immediate interactive testing)
 export async function guestLogin(_req: Request, res: Response): Promise<void> {
-  const guestEmail = 'guest.developer@codecollab.dev'
-  let user = await prisma.user.findUnique({
-    where: { email: guestEmail },
-  })
+  const guestSuffix = Math.floor(1000 + Math.random() * 9000)
+  const guestName = `Guest Developer ${guestSuffix}`
+  const guestEmail = `guest.${Date.now()}.${guestSuffix}@codecollab.dev`
+  const defaultPassword = await bcrypt.hash('GuestDemoPass123!', 10)
 
-  if (!user) {
-    const defaultPassword = await bcrypt.hash('GuestDemoPass123!', 10)
-    user = await prisma.user.create({
-      data: {
-        name: 'Demo Developer',
-        email: guestEmail,
-        password: defaultPassword,
-        avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=DemoDeveloper',
-      },
-    })
-  }
+  const user = await prisma.user.create({
+    data: {
+      name: guestName,
+      email: guestEmail,
+      password: defaultPassword,
+      avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(guestName)}`,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      avatarUrl: true,
+      githubId: true,
+    },
+  })
 
   const token = generateToken(user.id)
   setAuthCookie(res, token)
@@ -139,13 +143,7 @@ export async function guestLogin(_req: Request, res: Response): Promise<void> {
   res.json({
     message: 'Guest session started',
     token,
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      avatarUrl: user.avatarUrl,
-      githubId: user.githubId,
-    },
+    user,
   })
 }
 

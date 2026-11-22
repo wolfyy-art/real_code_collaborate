@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { Code2, LogOut, LayoutDashboard } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
+import { authApi } from '@/services/api'
 import { Avatar } from './Avatar'
 import toast from 'react-hot-toast'
 
@@ -47,7 +48,7 @@ export function Navbar({ showUserMenu = true }: NavbarProps) {
           </button>
         </div>
       ) : showUserMenu ? (
-        <a href="/auth/github" className="btn-primary py-1.5 text-sm">
+        <a href={authApi.githubLoginUrl()} className="btn-primary py-1.5 text-sm">
           Sign in with GitHub
         </a>
       ) : null}

@@ -37,12 +37,6 @@ interface Version {
   createdBy: { id: string; name: string; avatarUrl: string | null } | null
 }
 
-// ── Online user (from Socket.IO — Phase 4) ─────────────────
-interface OnlineUser {
-  socketId: string
-  user: { id: string; name: string; avatarUrl: string | null }
-}
-
 export default function EditorPage() {
   const { roomId } = useParams<{ roomId: string }>()
   const { user }   = useAuth()

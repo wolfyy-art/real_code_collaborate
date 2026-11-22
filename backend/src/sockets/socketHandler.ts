@@ -7,7 +7,6 @@ import {
   applyUpdate,
   getStateAsUpdate,
   getDiffUpdate,
-  deleteDoc,
 } from '../collaboration/docManager'
 
 /**
@@ -81,6 +80,7 @@ export function registerSocketHandlers(io: SocketIOServer): void {
       }
 
       // Attach user to socket for use in handlers below
+      // eslint-disable-next-line no-extra-semi
       ;(socket as SocketWithUser).user = user
       next()
     } catch {
@@ -96,23 +96,33 @@ export function registerSocketHandlers(io: SocketIOServer): void {
     // ── JOIN ROOM ──────────────────────────────────────────
     socket.on('join-room', async (roomId: string) => {
       try {
-        // Verify the user is actually a member of this room
-        const membership = await prisma.roomMember.findUnique({
-          where: { roomId_userId: { roomId, userId: user.id } },
+        // If this socket is already in a different room, leave it first.
+        // This handles reconnects and room switches without leaving ghost users.
+        const previousRoomId = (socket as SocketWithUser).currentRoomId
+        if (previousRoomId && previousRoomId !== roomId) {
+          handleLeaveRoom(io, socket, previousRoomId, user)
+        }
+
+        // Auto-join room membership if not already a member (supports direct link sharing)
+        const room = await prisma.room.findUnique({
+          where: { id: roomId },
+          select: { id: true, currentCode: true },
         })
-        if (!membership) {
-          socket.emit('error', { message: 'You are not a member of this room' })
+        if (!room) {
+          socket.emit('error', { message: 'Room not found' })
           return
         }
 
-        // Fetch room to initialize code document if needed
-        const room = await prisma.room.findUnique({
-          where: { id: roomId },
-          select: { currentCode: true },
+        // Ensure user is enrolled in roomMember table
+        await prisma.roomMember.upsert({
+          where:  { roomId_userId: { roomId, userId: user.id } },
+          update: {},
+          create: { roomId, userId: user.id, role: 'member' },
         })
 
-        // Initialize server Y.Doc with saved currentCode if doc is newly created
-        getOrCreateDoc(roomId, room?.currentCode ?? '')
+        // Initialize server Y.Doc with saved currentCode if doc is newly created.
+        // If the doc already exists in memory (reconnect), this is a no-op.
+        getOrCreateDoc(roomId, room.currentCode ?? '')
 
         // Join the Socket.IO room (isolated namespace for broadcasts)
         socket.join(roomId)
@@ -133,8 +143,9 @@ export function registerSocketHandlers(io: SocketIOServer): void {
         // Broadcast updated user list to everyone in the room
         broadcastRoomUsers(io, roomId)
 
-        // Send the current full document state to the new user
-        // This is "sync step 1 from server" — give them everything we have
+        // Send the current full document state to the joining user.
+        // This is the authoritative server state — the client applies it
+        // and only seeds initialCode if this update is empty (new room).
         const fullState = getStateAsUpdate(roomId)
         socket.emit('sync-full-state', Array.from(fullState))
 

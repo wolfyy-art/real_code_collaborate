@@ -18,6 +18,7 @@ export const executeCodeSchema = z.object({
   language: z.enum(['python', 'javascript', 'java']),
 })
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface Judge0Submission { token: string }
 interface Judge0Result {
   stdout:         string | null
